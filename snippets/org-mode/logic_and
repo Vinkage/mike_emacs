@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: logical and
+# uuid: mike_logic_and
+# key: tip
+# condition: (texmathp)
+# --
+\land $0

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: tt_text
+# uuid: mike_tt_text
+# key: tt
+# condition: (texmathp)
+# --
+\text{$0} <++>

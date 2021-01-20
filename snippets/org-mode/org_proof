@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: org_proof
+# uuid: org_proof
+# key: ;prf
+# condition: (not (texmathp))
+# --
+#+begin_proof
+$0
+#+end_proof

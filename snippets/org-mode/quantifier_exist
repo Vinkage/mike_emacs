@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: quantifier_exists
+# uuid:  mike_quantifier_exists
+# key: exist
+# condition: (texmathp)
+# --
+\exists $0

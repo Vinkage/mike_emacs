@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: latex_variance
+# uuid: mike_latex_variance
+# key: var
+# condition: (texmathp)
+# --
+\mathbb{V} \left[$0\right] <++>

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: my_hello
+# key: snip
+# condition: t 'auto
+# --
+hello$1goobdy

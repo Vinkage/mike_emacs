@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: cap
+# uuid: mike_cap
+# key: cap
+# condition: (texmathp)
+# --
+\cap $0

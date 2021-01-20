@@ -1,0 +1,13 @@
+# -*- mode: snippet -*-
+# name: jc_plot
+# uuid: mike_jc_plot
+# key: jcplt
+# condition: t
+# --
+fig, ax = plt.subplots($0)
+
+ax.set()
+ax.grid()
+
+fig.savefig("<++>")
+plt.close()

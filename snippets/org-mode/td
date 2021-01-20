@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# type: command
+# name: tot_de
+# uuid: mike_tot_de
+# key: td
+# condition: (texmathp)
+# --
+(backward-delete-char 1)
+(yas/expand-snippet "^{$0} <++>")

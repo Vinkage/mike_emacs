@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: r_ggplot_plus_geom
+# uuid: mike_r_ggplot_plus_geom
+# key: ggpm
+# condition: t
+# --
+ggplot($0, aes(<++>)) +
+    geom_<++>(<++>)

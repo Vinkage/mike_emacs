@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: sets_subs
+# uuid: mike_sets_subs
+# key: subs
+# condition: (texmathp)
+# --
+\subset $0

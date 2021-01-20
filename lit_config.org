@@ -1,0 +1,946 @@
+* doom
+#+BEGIN_SRC emacs-lisp
+(setq doom-font (font-spec :family "ShureTechMono Nerd Font Mono" :size 13)
+      doom-variable-pitch-font (font-spec :family "EtBembo" :size 16)
+      doom-unicode-font (font-spec :family "ShureTechMono Nerd Font Mono" :size 14)
+      doom-big-font (font-spec :family "ShureTechMono Nerd Font Mono" :size 14))
+
+(use-package! doom-themes
+  :custom-face
+  (org-level-1 ((t (:weight bold :height 1.2))))
+  (org-link ((t (:underline t :foreground "#458588"))))
+  :config
+  ;; Global settings (defaults)
+  (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
+        doom-themes-enable-italic t) ; if nil, italics is universally disabled
+
+  (load-theme 'doom-gruvbox t)
+
+
+  ;; Enable flashing mode-line on errors
+  (doom-themes-visual-bell-config)
+
+  ;; Corrects (and improves) org-mode's native fontification.
+  (doom-themes-org-config)
+  )
+
+(setq undo-limit 80000000                          ; Raise undo-limit to 80Mb
+      evil-want-fine-undo t                             ; By default while in insert all changes are one big blob. Be more granular
+      inhibit-compacting-font-caches t      ; When there are lots of glyphs, keep them in memory
+      truncate-string-ellipsis "…")               ; Unicode ellispis are nicer than "...", and also save /precious/ space
+#+END_SRC
+
+* Editor, snippets and jumping
+** editor things
+
+#+BEGIN_SRC emacs-lisp
+;;; Nice size for the default window
+(defun get-default-height ()
+       (/ (- (display-pixel-height) 120)
+          (frame-char-height)))
+
+(add-to-list 'default-frame-alist '(width . 140))
+(add-to-list 'default-frame-alist (cons 'height (get-default-height)))
+
+(after! smartparens
+  (smartparens-global-mode -1))
+#+END_SRC
+
+** mappings
+
+#+BEGIN_SRC emacs-lisp
+(map! :map (evil-emacs-state-map evil-insert-state-map evil-motion-state-map)
+      "C-z" nil)
+
+;; (use-package! key-chord
+;;   :config
+;;   (key-chord-mode 1)
+;;   )
+
+;; (after! key-chord
+;;   (key-chord-define-global "  " 'my/jump-map)
+;;   )
+
+(defun my/jump ()
+  (interactive)
+  (delete-char -1)
+  (placeholder-forward 1)
+  )
+
+(defun my/jump-map ()
+  (interactive)
+  (if (string= (string (preceding-char)) " ")
+      (my/jump)
+    (if (yas-maybe-expand-abbrev-key-filter "yes") (+org-yas-expand-maybe-h) (insert " "))
+    )
+  )
+
+
+(map!
+ :i "SPC" 'my/jump-map
+ :i "C-q" 'ace-window
+ :n "C-q" 'ace-window
+ )
+(map! :leader
+      :desc "Code buffer with session" "m;" #'org-babel-switch-to-session-with-code)
+
+(defun my/eval-py-function ()
+  (interactive)
+  )
+
+(defun my/eval-py-region ()
+  (interactive)
+  )
+
+(map!
+  :map python-mode-map
+  :localleader
+  :desc "eval line or region in inferior python process" "," #'my/eval-py-region
+ )
+
+(map!
+ :map python-mode-map
+ :n "<C-return>" 'eir-eval-in-python
+ :i "<C-return>" 'eir-eval-in-python
+)
+
+(defun knitr/Buffer ()
+  "Sends render command to the ess process buffer."
+  (interactive)
+  (ess-execute (concat "rmarkdown::render('" (buffer-file-name) "')") 'buffer)
+  )
+
+(map! :after markdown-mode
+      :map markdown-mode-map
+      :localleader
+      :n "e" 'knitr/Buffer)
+
+
+(setq evil-escape-key-sequence "kj")
+#+END_SRC
+
+** snippet settings
+#+BEGIN_SRC emacs-lisp
+(use-package! yasnippet
+  :diminish (yas-minor-mode)
+  :config
+  (setq yas-snippet-dirs `(,(concat "~/.doom.d/snippets")))
+  (yas-global-mode 1)
+  )
+(define-key yas-minor-mode-map (kbd "SPC") yas-maybe-expand)
+
+;; laas functions
+(defun laas-wrap-previous-object (tex-command)
+  "Wrap previous TeX object in TEX-COMMAND."
+  (interactive)
+  (let ((start (laas-identify-adjacent-tex-object)))
+    (insert "} ")
+    ;; (when (aref aas-transient-snippet-key (1- (length aas-transient-snippet-key)))
+    ;;   (insert " "))
+    (save-excursion
+      (goto-char start)
+      (insert (concat "\\" tex-command "{")))))
+
+(defun aas-object-on-left-condition ()
+  "Return t if there is a TeX object imidiately to the left."
+  ;; TODO use `laas-identify-adjacent-tex-object'
+  (and (or (<= ?a (char-before) ?z)
+           (<= ?A (char-before) ?Z)
+           (<= ?0 (char-before) ?9)
+           (memq (char-before) '(?\) ?\] ?})))
+       (texmathp)))
+
+(defvar laas-accent-snippets
+  `(:cond ,#'aas-object-on-left-condition
+    .
+    ,(cl-loop for (key . exp) in '((". " . "dot")
+                                  (".. " . "dot")
+                                  (",." . "vec")
+                                  (".," . "vec")
+                                  ("~ " . "tilde")
+                                  ("hat" . "hat")
+                                  ("bar" . "overline"))
+             collect :expansion-desc
+             collect (format "Wrap in \\%s{}" exp)
+             collect key
+             ;; re-bind exp so its not changed in the next iteration
+             collect (let ((expp exp)) (lambda () (interactive)
+                                         (laas-wrap-previous-object expp)))))
+  "A simpler way to apply accents. Expand If LaTeX symbol immidiately before point.")
+
+(defun laas-identify-adjacent-tex-object (&optional point)
+  "Return the startig position of the left-adjacent TeX object from POINT."
+  (save-excursion
+    (goto-char (or point (point)))
+    (cond
+     ((memq (char-before) '(?\) ?\]))
+      (backward-sexp)
+      (point))
+     ((= (char-before) ?})
+      (save-excursion
+        (cl-loop do (backward-sexp)
+                 while (= (char-before) ?}))
+        ;; try to catch the marco if the braces belong to one
+        (if (looking-back "\\\\[A-Za-z@*]+" (line-beginning-position))
+            (match-beginning 0)
+          (point))))
+     ((or (<= ?a (char-before) ?z)
+          (<= ?A (char-before) ?Z)
+          (<= ?0 (char-before) ?9))
+      (backward-word)
+      (when (= (char-before) ?\\) (backward-char))
+      (when (or (= (char-before) ?_)
+                (= (char-before) ?^))
+        (backward-char)
+        (goto-char (laas-identify-adjacent-tex-object))) ; yay recursion
+      (point)))))
+
+(defun laas-smart-fraction ()
+  "Expansion function used for auto-subscript snippets."
+  (interactive)
+  (let* ((tex-obj (laas-identify-adjacent-tex-object))
+         (start (save-excursion
+                  ;; if bracketed, delete outermost brackets
+                  (if (memq (char-before) '(?\) ?\]))
+                      (progn
+                        (backward-delete-char 1)
+                        (goto-char tex-obj)
+                        (delete-char 1))
+                    (goto-char tex-obj))
+                  (point)))
+         (end (point))
+         (content (buffer-substring-no-properties start end)))
+    (yas-expand-snippet (format "\\frac{%s}{$0} <++>" content)
+                        start end))
+  (laas--shut-up-smartparens))
+
+#+END_SRC
+
+** jumping functions
+#+BEGIN_SRC emacs-lisp
+(defcustom placeholder-string "<++>"
+  "Placeholder string. Pick a string unlikely to appear in your buffers.")
+
+(defun placeholder-forward (count)
+  "Delete the next COUNTth occurrence of the placeholder string,
+leaving point there ready for insertion. If called again
+immediately after, it will restore that occurence of the
+placeholder and move to the next."
+  (interactive "p")
+  (let ((n (length placeholder-string)))
+    ;; (when (eq last-command 'placeholder)
+    ;;   (insert placeholder-string)
+    ;;   (when (< count 0) (backward-char n)))
+    (search-forward placeholder-string nil nil count)
+    (delete-char (if (> count 0) (- n) n))
+    (setq this-command 'placeholder)))
+
+(defun placeholder-backward (count)
+  "Delete the previous COUNTth occurrence of the placeholder string,
+leaving point there ready for insertion. If called again
+immediately after, it will restore that occurence of the
+placeholder and move to the previous."
+  (interactive "p")
+  (placeholder-forward (- count)))
+#+END_SRC
+
+
+* Python
+
+This hides message when opening an Ipython repl
+
+#+BEGIN_SRC emacs-lisp
+(setq python-shell-unbuffered nil)
+(setq python-shell-prompt-detect-failure-warning nil)
+(setq python-shell-prompt-detect-enabled nil)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(add-hook! python-mode
+  (setq +python-ipython-command '("ipython3" "-i" "--simple-prompt" "--no-color-info"))
+  (lambda () (when (file-remote-p default-directory) (company-mode -1)))
+  (lambda () (when (file-remote-p default-directory) (projectile-mode -1)))
+  )
+
+(defun +mike/open-ipython-repl ()
+  "Open an IPython REPL."
+  (interactive)
+  (require 'python)
+  (let ((python-shell-interpreter
+         (or (car +python-ipython-command)
+             "ipython"))
+        (python-shell-interpreter-args
+         (string-join (cdr +python-ipython-command) " ")))
+    (+python/open-repl)))
+
+
+#+END_SRC
+
+#+RESULTS:
+| (lambda (&rest _) (setq +python-ipython-command '(ipython3 -i --simple-prompt --no-color-info)) (lambda nil (when (file-remote-p default-directory) (company-mode -1))) (lambda nil (when (file-remote-p default-directory) (projectile-mode -1)))) | er/add-python-mode-expansions | doom-modeline-env-setup-python | (lambda nil (local-set-key (kbd <C-return>) 'eir-eval-in-python)) | doom--setq-tab-width-for-python-mode-h | +python-use-correct-flycheck-executables-h | evil-collection-python-set-evil-shift-width | (lambda (&rest _) (setq +python-ipython-command '(ipython3 -i --simple-prompt --no-color-info)) #'(lambda nil (if (file-remote-p default-directory) (progn (company-mode -1)))) #'(lambda nil (if (file-remote-p default-directory) (progn (projectile-mode -1))))) | pipenv-mode |
+
+** eval in repl
+
+#+BEGIN_SRC emacs-lisp
+(require 'eval-in-repl)
+
+(setq eir-repl-placement 'right)
+(require 'eval-in-repl-python)
+(add-hook 'python-mode-hook
+          '(lambda ()
+             (local-set-key (kbd "<C-return>") 'eir-eval-in-python)))
+#+END_SRC
+
+* R
+#+BEGIN_SRC emacs-lisp
+(use-package! poly-R)
+
+;; define markdown citation formats
+(defvar markdown-cite-format)
+(setq markdown-cite-format
+      '(
+        (?\C-m . "[@%l]")
+        (?p . "[@%l]")
+        (?t . "@%l")
+        )
+      )
+
+;; wrap reftex-citation with local variables for markdown format
+(defun markdown-reftex-citation ()
+  (interactive)
+  (let ((reftex-cite-format markdown-cite-format)
+        (reftex-cite-key-separator "; @"))
+    (reftex-citation)))
+
+;; bind modified reftex-citation to C-c[, without enabling reftex-mode
+;; https://www.gnu.org/software/auctex/manual/reftex/Citations-Outside-LaTeX.html#SEC31
+(add-hook
+ 'markdown-mode-hook
+ (lambda ()
+   (define-key markdown-mode-map "\C-c[" 'markdown-reftex-citation)))
+#+END_SRC
+
+* Org
+** General
+#+BEGIN_SRC emacs-lisp
+(setenv "DICTIONARY" "en-custom")
+(setenv "DICTPATH" "/Users/mikevink/Library/Spelling/")
+
+(use-package! org
+  :config
+  (setq org-image-actual-width '(400)
+        org-clock-persist 'history
+        org-directory "/Users/mikevink/Dropbox/org"
+        org-highlight-latex-and-related '(latex script entities)
+        org-columns-default-format "%25ITEM %TODO %3PRIORITY %TAGS"
+        ispell-dictionary "en-custom"
+        org-startup-folded t
+        )
+  (setq org-startup-indented t
+        ;; display-line-numbers-type nil
+        ;; org-superstar-leading-bullet '('" ")
+        org-superstar-headline-bullets-list '(" ") ;; no bullets, needs org-bullets package
+        org-ellipsis "  " ;; folding symbol
+        ;; org-pretty-entities t
+        org-hide-emphasis-markers t
+        ;; show actually italicized text instead of /italicized text/
+        ;; org-fontify-whole-heading-line t
+        ;; org-fontify-done-headline t
+        org-fontify-quote-and-verse-blocks t)
+  (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.0))
+)
+
+  ;; (setq org-agenda-files '("/Users/mikevink/Dropbox/org/daily/"))
+(setq org-agenda-files (list "/Users/mikevink/Dropbox/org/daily/"))
+#+END_SRC
+
+#+RESULTS:
+| /Users/mikevink/Dropbox/org/daily/ |
+
+** ox
+
+#+BEGIN_SRC emacs-lisp
+(eval-after-load "org"
+  '(require 'ox-gfm nil t))
+#+END_SRC
+
+#+RESULTS:
+: ox-gfm
+
+** agenda
+
+#+BEGIN_SRC emacs-lisp
+(use-package! org-super-agenda
+  :commands (org-super-agenda-mode))
+(after! org-agenda
+  (org-super-agenda-mode)
+  (define-key org-super-agenda-header-map (kbd "j") nil)
+  (define-key org-super-agenda-header-map (kbd "k") nil)
+)
+
+(add-to-list 'org-modules 'org-habit)
+(require 'org-habit)
+(setq org-habit-following-days 7)
+(setq org-habit-preceding-days 35)
+(setq org-habit-show-habits t)
+(setq org-log-into-drawer t)
+(setq org-agenda-start-day "+0d")
+(setq org-agenda-custom-commands
+      '(("o" "Overview"
+         ((agenda "" ((org-agenda-span 'day)
+                      (org-super-agenda-groups
+                       '((:name "Today"
+                          :time-grid t
+                          :date today
+                          :todo "TODAY"
+                          :scheduled today
+                          :order 1)
+                         (:discard (:tag ("Chore" "Routine" "Daily" "Habit")))))))
+          (alltodo "" ((org-agenda-overriding-header "")
+                       (org-super-agenda-groups
+                        '((:name "Next to do"
+                           :todo "NEXT"
+                           :order 1)
+                          (:name "Important"
+                           :tag "Important"
+                           :priority "A"
+                           :order 1)
+                          (:name "Due Today"
+                           :deadline today
+                           :order 2)
+                          (:name "Due Soon"
+                           :deadline future
+                           :order 8)
+                          (:name "Overdue"
+                           :deadline past
+                           :face error
+                           :order 7)
+                          (:name "Work"
+                           :tag  "Work"
+                           :order 3)
+                          (:name "Practicals"
+                           :tag "Practicals"
+                           :order 8)
+                          (:name "Emacs"
+                           :tag "Emacs"
+                           :order 13)
+                          (:name "Projects"
+                           :tag "Project"
+                           :order 14)
+                          (:name "Essay 1"
+                           :tag "Essay1"
+                           :order 2)
+                          (:name "Reading List"
+                           :tag "Read"
+                           :order 8)
+                          (:name "Work In Progress"
+                           :tag "WIP"
+                           :order 5)
+                          (:name "Blog"
+                           :tag "Blog"
+                           :order 12)
+                          (:name "Trivial"
+                           :priority<= "E"
+                           :tag ("Trivial" "Unimportant")
+                           :todo ("SOMEDAY" )
+                           :order 90)
+                          (:discard (:tag ("Chore" "Routine" "Daily")))))))))))
+
+(use-package! org-gcal
+  :after org
+  :config
+  (setq org-gcal-client-id "382803836955-n22brg2iq0a35df9pi9nq9c3p1frgk1f.apps.googleusercontent.com"
+        org-gcal-client-secret "egUOvADZg64PAdOXCxaqgbCD"
+        org-gcal-file-alist '(("mike1994vink@gmail.com" . "~/Dropbox/org/daily/main_cal.org")
+                              ("5fu7ufq72i25srsh2h380hkvgov1scf3@import.calendar.google.com" . "~/Dropbox/org/daily/uu_timetable.org"))
+        org-gcal-auto-archive nil
+        org-gcal-notify-p nil)
+
+  (add-hook 'org-agenda-mode-hook 'org-gcal-fetch)
+  (add-hook 'org-capture-after-finalize-hook 'org-gcal-fetch))
+
+;; (add-hook 'org-agenda-mode-hook (lambda () (org-gcal-sync) ))
+;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync) ))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+** fancy priorities
+
+#+BEGIN_SRC emacs-lisp
+ (use-package! org-fancy-priorities
+; :ensure t
+  :hook
+  (org-mode . org-fancy-priorities-mode)
+  :config
+   (setq org-fancy-priorities-list '("⚡" "⬆" "⬇" "☕")))
+#+END_SRC
+
+#+RESULTS:
+| org-fancy-priorities-mode | er/add-org-mode-expansions | +lookup--init-org-mode-handlers-h | (closure (t) (&rest _) (add-hook 'before-save-hook 'org-encrypt-entries nil t)) | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | doom-disable-show-paren-mode-h | doom-disable-show-trailing-whitespace-h | +org-enable-auto-reformat-tables-h | +org-enable-auto-update-cookies-h | +org-make-last-point-visible-h | evil-org-mode | toc-org-enable | flyspell-mode | embrace-org-mode-hook | org-eldoc-load |
+
+** rice
+
+#+BEGIN_SRC emacs-lisp
+;; (add-hook 'org-mode-hook
+;;           '(lambda ()
+;;              (variable-pitch-mode 1) ;; All fonts with variable pitch.
+;;              (mapc
+;;               (lambda (face) ;; Other fonts with fixed-pitch.
+;;                 (set-face-attribute face nil :inherit 'fixed-pitch))
+;;               (list 'org-code
+;;                     'org-link
+;;                     'org-block
+;;                     'org-table
+;;                     'org-verbatim
+;;                     'org-block-begin-line
+;;                     'org-block-end-line
+;;                     'org-meta-line
+;;                     'org-document-info-keyword
+;;                     'org-hide))))
+
+(after! org
+  (setq org-startup-indented t
+     ;; display-line-numbers-type nil
+     ;; org-superstar-leading-bullet '('" ")
+      org-superstar-headline-bullets-list '(" ") ;; no bullets, needs org-bullets package
+      org-ellipsis "  " ;; folding symbol
+      ;; org-pretty-entities t
+      org-hide-emphasis-markers t
+      ;; show actually italicized text instead of /italicized text/
+      ;; org-fontify-whole-heading-line t
+      ;; org-fontify-done-headline t
+      org-fontify-quote-and-verse-blocks t)
+  )
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.2))
+;; ;; (setq doom-theme 'doom-city-lights)
+
+;; ;; ;; (setq org-format-latex-options :foreground default :background default :scale 1.5 :html-foreground "Black" :html-background "Transparent" :html-scale 1.0 :matchers
+;; ;; ;; ("begin" "$1" "$" "$$" "\\(" "\\["))
+#+END_SRC
+
+#+RESULTS:
+| :foreground | default | :background | default | :scale | 1.2 | :html-foreground | Black | :html-background | Transparent | :html-scale | 1.0 | :matchers | (begin $1 $ $$ \( \[) |
+
+** code block editing
+
+#+BEGIN_SRC emacs-lisp
+(defun org-babel-switch-to-session-with-code (&optional arg _info)
+  "Switch to code buffer and display session."
+  (interactive "P")
+  (let ((swap-windows
+	 (lambda ()
+	   (let ((other-window-buffer (window-buffer (next-window))))
+	     (set-window-buffer (next-window) (current-buffer))
+	     (set-window-buffer (selected-window) other-window-buffer))
+	   (other-window 1)))
+	(info (org-babel-get-src-block-info))
+	(org-src-window-setup 'reorganize-frame))
+    (save-excursion
+      (org-babel-switch-to-session arg info))
+    (org-edit-src-code)
+    (funcall swap-windows)))
+#+END_SRC
+
+#+RESULTS:
+: org-babel-switch-to-session-with-code
+
+** latex
+*** preview
+this is for automatic LaTeX previewing
+#+BEGIN_SRC emacs-lisp
+(add-hook 'org-mode-hook 'org-fragtog-mode)
+#+END_SRC
+
+These packages will be appended to the list below
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (setq org-latex-packages-alist '(
+                                   ("" "txfonts" t)
+                                   ("" "mdframed" t)
+                                   )))
+#+END_SRC
+
+The header that is used by org to preview latex
+#+BEGIN_SRC emacs-lisp
+;; \\input{/Users/mikevink/.data/nvim/vnnv/latex/preamble.tex}
+(after! org
+  (setq org-format-latex-header
+"\\documentclass{article}
+\\usepackage[usenames]{color}
+[PACKAGES]
+[DEFAULT-PACKAGES]
+\\pagestyle{empty}             % do not remove
+% The settings below are copied from fullpage.sty
+\\setlength{\\textwidth}{\\paperwidth}
+\\addtolength{\\textwidth}{-3cm}
+\\setlength{\\oddsidemargin}{1.5cm}
+\\addtolength{\\oddsidemargin}{-2.54cm}
+\\setlength{\\evensidemargin}{\\oddsidemargin}
+\\setlength{\\textheight}{\\paperheight}
+\\addtolength{\\textheight}{-\\headheight}
+\\addtolength{\\textheight}{-\\headsep}
+\\addtolength{\\textheight}{-\\footskip}
+\\addtolength{\\textheight}{-3cm}
+\\setlength{\\topmargin}{1.5cm}
+\\addtolength{\\topmargin}{-2.54cm}"
+))
+#+END_SRC
+*** classes
+
+here i add a custom LaTeX classes to export to pdf
+
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (unless (boundp 'org-latex-classes)
+    (setq org-latex-classes nil))
+
+  (add-to-list 'org-latex-classes
+               '("notes"
+                 "\\documentclass{memoir}
+\\input{/Users/mikevink/.data/nvim/vnnv/latex/preamble.tex}"
+                 ("\\chapter{%s}" . "\\chapter*{%s}")
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")))
+  )
+(after! ox-latex
+  (setq org-latex-tables-booktabs t)
+  (setq org-latex-listings 'minted
+        org-latex-packages-alist '(("" "minted"))
+        org-latex-minted-options '(("breaklines" "true")
+                                   ("breakanywhere" "true"))
+        org-latex-pdf-process
+        '("latexmk -shell-escape -interaction=nonstopmode -f -pdf -output-directory=%o %f"))
+
+  )
+#+END_SRC
+
+
+** anki
+
+#+BEGIN_SRC emacs-lisp
+;; Or using the use-package stuff
+(use-package! anki-editor
+  :after org
+  :init
+  (setq-default anki-editor-use-math-jax t)
+  :config
+  (setq anki-editor-break-consecutive-braces-in-latex nil)
+  (map!
+        :v "C-A" 'anki-editor-cloze-dwim
+   )
+
+  )
+
+#+END_SRC
+
+** spelling
+** rmd
+#+BEGIN_SRC emacs-lisp
+(add-load-path! "lisp")
+(require 'ox-ravel)
+#+END_SRC
+
+#+RESULTS:
+: ox-ravel
+** org-ref
+
+#+BEGIN_SRC emacs-lisp
+(use-package! org-ref
+  :after org
+  :init
+                                        ; code to run before loading org-ref
+  :config
+  (setq org-ref-notes-directory org-directory
+        org-ref-default-bibliography '("/Users/mikevink/Dropbox/bibliography/references.bib")
+        org-ref-pdf-directory "/Users/mikevink/Dropbox/bibliography/pdfs"
+        org-ref-completion-library 'org-ref-ivy-cite)
+                                        ; code to run after loading org-ref
+  )
+
+
+;; (setq org-capture-templates '(("t" "Personal todo" entry
+;;   (file+headline +org-capture-todo-file "Inbox")
+;;   "* [ ] %?\n%i\n%a" :prepend t)
+;;  ("n" "Personal notes" entry
+;;   (file+headline +org-capture-notes-file "Inbox")
+;;   "* %u %?\n%i\n%a" :prepend t)
+;;  ("j" "Journal" entry
+;;   (file+olp+datetree +org-capture-journal-file)
+;;   "* %U %?\n%i\n%a" :prepend t)
+;;  ("p" "Templates for projects")
+;;  ("pt" "Project-local todo" entry
+;;   (file+headline +org-capture-project-todo-file "Inbox")
+;;   "* TODO %?\n%i\n%a" :prepend t)
+;;  ("pn" "Project-local notes" entry
+;;   (file+headline +org-capture-project-notes-file "Inbox")
+;;   "* %U %?\n%i\n%a" :prepend t)
+;;  ("pc" "Project-local changelog" entry
+;;   (file+headline +org-capture-project-changelog-file "Unreleased")
+;;   "* %U %?\n%i\n%a" :prepend t)
+;;  ("o" "Centralized templates for projects")
+;;  ("ot" "Project todo" entry #'+org-capture-central-project-todo-file "* TODO %?\n %i\n %a" :heading "Tasks" :prepend nil)
+;;  ("on" "Project notes" entry #'+org-capture-central-project-notes-file "* %U %?\n %i\n %a" :heading "Notes" :prepend t)
+;;  ("oc" "Project changelog" entry #'+org-capture-central-project-changelog-file "* %U %?\n %i\n %a" :heading "Changelog" :prepend t)))
+
+#+END_SRC
+
+** Helm bibtex
+
+#+BEGIN_SRC emacs-lisp
+(use-package! helm-bibtex
+  :after org
+  :init
+  :config
+  )
+
+(setq bibtex-format-citation-functions
+      '((org-mode . (lambda (x) (insert (concat
+                                         "\\cite{"
+                                         (mapconcat 'identity x ",")
+                                         "}")) ""))))
+(setq
+      bibtex-completion-pdf-field "file"
+      bibtex-completion-bibliography
+      '("~/Dropbox/bibliography/references.bib")
+      bibtex-completion-library-path '("~/Dropbox/bibliography/pdfs")
+     ; bibtex-completion-notes-path "~/Dropbox/Org/references/articles.org"  ;; not needed anymore as I take notes in org-roam
+      )
+#+END_SRC
+
+** ORB: org-roam-bibtex
+
+#+BEGIN_SRC emacs-lisp
+;; (use-package! org-roam-bibtex
+;;   :load-path "~/Dropbox/bibliography/references.bib" ;Modify with your own path
+;;   :hook (org-roam-mode . org-roam-bibtex-mode)
+;;   :bind (:map org-mode-map
+;;          (("C-c n a" . orb-note-actions))))
+
+;; If you installed via MELPA
+(use-package! org-roam-bibtex
+  :after org-roam
+  :hook (org-roam-mode . org-roam-bibtex-mode))
+
+;; (setq orb-templates
+;;       '(("r" "ref" plain (function org-roam-capture--get-point) ""
+;;          :file-name "${citekey}"
+;;          :head "#+TITLE: ${citekey}: ${title}\n#+ROAM_KEY: ${ref}\n" ; <--
+;;          :unnarrowed t)))
+;; (setq orb-preformat-keywords   '(("citekey" . "=key=") "title" "url" "file" "author-or-editor" "keywords"))
+
+
+
+;; (setq orb-templates
+;;       '(("n" "ref+noter" plain (function org-roam-capture--get-point)
+;;          ""
+;;          :file-name "${slug}"
+;;          :head "#+TITLE: ${citekey}: ${title}\n#+ROAM_KEY: ${ref}\n#+ROAM_TAGS:
+
+;; - keywords :: ${keywords}
+;; \* ${title}
+;; :PROPERTIES:
+;; :Custom_ID: ${citekey}
+;; :URL: ${url}
+;; :AUTHOR: ${author-or-editor}
+;; :NOTER_DOCUMENT: %(orb-process-file-field \"${citekey}\")
+;; :NOTER_PAGE:
+;; :END:")))
+
+(setq orb-preformat-keywords
+      '("citekey" "title" "url" "author-or-editor" "keywords" "file")
+      orb-process-file-keyword t
+      orb-file-field-extensions '("pdf"))
+
+(setq orb-templates
+      '(("r" "ref" plain (function org-roam-capture--get-point)
+         ""
+         :file-name "${citekey}"
+         :head "#+TITLE: ${citekey}: ${title}\n#+ROAM_KEY: ${ref}
+
+- keywords :: ${keywords}
+\* ${title}
+:PROPERTIES:
+:Custom_ID: ${citekey}
+:URL: ${url}
+:AUTHOR: ${author-or-editor}
+:NOTER_DOCUMENT: ${file}
+:NOTER_PAGE:
+:END:")))
+
+#+END_SRC
+
+#+RESULTS:
+| r | ref | plain | #'org-roam-capture--get-point |   | :file-name | ${citekey} | :head | #+TITLE: ${citekey}: ${title} |
+
+** org roam
+
+#+BEGIN_SRC emacs-lisp
+(use-package! org-roam
+  ;; :commands (org-roam-insert org-roam-find-file org-roam org-roam-show-graph)
+  :init
+  (setq org-roam-directory org-directory)
+  (setq org-roam-graph-viewer "/usr/bin/open")
+  (add-to-list 'org-roam-buffer-prepare-hook (lambda () (org--latex-preview-region (point-min) (point-max))) t)
+  ;; (map! :leader
+  ;;     :prefix "n"
+  ;;     :desc "Org-Roam-Insert" "i" #'org-roam-insert
+  ;;     :desc "Org-Roam-Find"   "/" #'org-roam-find-file
+  ;;     :desc "Org-Roam-Buffer" "r" #'org-roam
+  ;;     :desc "Org-Roam-Show-Graph" "g" #'org-roam-show-graph)
+  :config
+  (org-roam-mode +1)
+  (require 'org-roam-protocol)
+) ;; require org-roam-protocol here
+
+
+
+
+#+END_SRC
+
+** org roam server
+
+#+BEGIN_SRC emacs-lisp
+(use-package org-roam-server
+  :ensure t
+  :config
+  (setq org-roam-server-host "127.0.0.1"
+        org-roam-server-port 8080
+        org-roam-server-authenticate nil
+        org-roam-server-export-inline-images t
+        org-roam-server-serve-files nil
+        org-roam-server-served-file-extensions '("pdf" "mp4" "ogv")
+        org-roam-server-network-poll t
+        org-roam-server-network-arrows nil
+        org-roam-server-network-label-truncate t
+        org-roam-server-network-label-truncate-length 60
+        org-roam-server-network-label-wrap-length 20))
+
+(defun org-roam-server-open ()
+    "Ensure the server is active, then open the roam graph."
+    (interactive)
+    (smartparens-global-mode -1)
+    (org-roam-server-mode 1)
+    (shell-command (concat "open " (format "http://localhost:%d" org-roam-server-port)))
+    (smartparens-global-mode 1))
+
+;; automatically enable server-mode
+(after! org-roam
+  (smartparens-global-mode -1)
+  (org-roam-server-mode)
+  (smartparens-global-mode 1))
+
+(setq org-roam-graph-exclude-matcher '("private" "daily"))
+#+END_SRC
+
+** capture templates
+
+#+BEGIN_SRC emacs-lisp
+(after! org
+  (setq org-capture-templates
+        '(("a"               ; key
+           "Article"         ; name
+           entry             ; type
+           (file+headline "~/Dropbox/org/todo.org" "Article")  ; target
+           "\* %^{Title} :article: \n:PROPERTIES:\n:Created: %U\n:Linked: %a\n:END:\n%i\nBrief description:\n%?"  ; template
+
+           :prepend t        ; properties
+           :empty-lines 1    ; properties
+           :created t        ; properties
+           )))
+  (setq org-roam-capture-templates
+        '(("d" "default" plain (function org-roam-capture--get-point)
+           "%?"
+           :file-name "${slug}"
+           :head "#+TITLE: ${title}
+,#+startup: latexpreview showall
+
+,#+CREATED: %u
+
+")))
+
+  )
+#+END_SRC
+
+* Lsp
+
+#+BEGIN_SRC emacs-lisp
+(use-package! lsp
+  :config
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-tramp-connection "pyls")
+                    :major-modes '(python-mode)
+                    :remote? t
+                    :server-id 'pyls-remote))
+  (setq dap-python-executable "/usr/bin/python3")
+  :hook python-mode
+  )
+
+
+
+#+END_SRC
+
+#+RESULTS:
+| lsp | er/add-python-mode-expansions | doom-modeline-env-setup-python | (lambda nil (local-set-key (kbd <C-return>) 'eir-eval-in-python)) | doom--setq-tab-width-for-python-mode-h | +python-use-correct-flycheck-executables-h | evil-collection-python-set-evil-shift-width | (lambda (&rest _) (setq +python-ipython-command '(ipython3 -i --simple-prompt --no-color-info)) #'(lambda nil (if (file-remote-p default-directory) (progn (company-mode -1)))) #'(lambda nil (if (file-remote-p default-directory) (progn (projectile-mode -1))))) | pipenv-mode |
+
+** Enables lsp in org mode special edit buffers
+#+BEGIN_SRC emacs-lisp
+(cl-defmacro lsp-org-babel-enable (lang)
+  "Support LANG in org source code block."
+  (setq centaur-lsp 'lsp-mode)
+  (cl-check-type lang stringp)
+  (let* ((edit-pre (intern (format "org-babel-edit-prep:%s" lang)))
+         (intern-pre (intern (format "lsp--%s" (symbol-name edit-pre)))))
+    `(progn
+       (defun ,intern-pre (info)
+         (let ((file-name (->> info caddr (alist-get :file))))
+           (unless file-name
+             (setq file-name (make-temp-file "babel-lsp-")))
+           (setq buffer-file-name file-name)
+           (lsp-deferred)))
+       (put ',intern-pre 'function-documentation
+            (format "Enable lsp-mode in the buffer of org source block (%s)."
+                    (upcase ,lang)))
+       (if (fboundp ',edit-pre)
+           (advice-add ',edit-pre :after ',intern-pre)
+         (progn
+           (defun ,edit-pre (info)
+             (,intern-pre info))
+           (put ',edit-pre 'function-documentation
+                (format "Prepare local buffer environment for org source block (%s)."
+                        (upcase ,lang))))))))
+(defvar org-babel-lang-list
+  '("go" "python" "ipython" "bash" "sh" "jupyter-python"))
+(dolist (lang org-babel-lang-list)
+  (eval `(lsp-org-babel-enable ,lang)))
+
+#+END_SRC
+
+** Dap mode
+
+#+BEGIN_SRC emacs-lisp
+(use-package! dap-mode
+  :config
+  (require 'dap-python)
+  )
+#+END_SRC
+
+#+RESULTS:
+: t
+
+* Tramp
+
+#+BEGIN_SRC emacs-lisp
+(use-package! tramp
+  :config
+  (setq remote-file-name-inhibit-cache nil)
+  (setq vc-ignore-dir-regexp
+        (format "%s\\|%s"
+                vc-ignore-dir-regexp
+                tramp-file-name-regexp))
+  (setq tramp-verbose 1)
+  )
+#+END_SRC

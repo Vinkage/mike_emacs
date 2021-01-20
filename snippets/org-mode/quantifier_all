@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: quantifier_all
+# uuid: mike_quantifier_all
+# key: all
+# condition: (texmathp)
+# --
+\forall $0

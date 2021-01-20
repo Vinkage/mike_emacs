@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: math_less_equal
+# uuid: mike_math_less_equal
+# key: leq
+# condition: (texmathp)
+# --
+\leq $0

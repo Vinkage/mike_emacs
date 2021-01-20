@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# type: command
+# name: latex_smart_frac
+# uuid: mike_latex_smart_frac
+# key: /
+# condition: (texmathp)
+# --
+(backward-delete-char 1)
+(laas-smart-fraction)

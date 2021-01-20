@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: align_org
+# uuid: align_org_mike
+# key: ;ali
+# condition: (not (texmathp))
+# --
+\begin{align}
+$0
+\end{align}
+<++>

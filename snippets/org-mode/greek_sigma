@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: greek_sigma
+# uuid: mike_greek_sigma
+# key: ;s
+# condition: (texmathp)
+# --
+\sigma $0

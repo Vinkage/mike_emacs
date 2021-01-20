@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: logic_xor
+# uuid: mike_logic_xor
+# key: xor
+# condition: (texmathp)
+# --
+\veebar $0

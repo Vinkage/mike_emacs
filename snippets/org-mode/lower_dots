@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: lower_dots
+# uuid: mike_lower_dots
+# key: ...
+# condition: (texmathp)
+# --
+\ldots $0

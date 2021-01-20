@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: iff
+# uuid: mike_iff
+# key: iff
+# condition: (texmathp)
+# --
+\iff $0

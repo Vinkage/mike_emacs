@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# install neovim if not installed
+if ! command -v emacs &> /dev/null
+then
+
+    case "$(uname -s)" in
+
+   Darwin)
+     echo 'Using Mac OS X install with brew'
+     brew tap railwaycat/emacsmacport
+     brew install emacs-mac
+     git clone --depth 1 https://github.com/hlissner/doom-emacs ~/.emacs.d
+     ~/.emacs.d/bin/doom install
+     ;;
+
+   Linux)
+     echo 'Linux'
+     ;;
+
+   CYGWIN*|MINGW32*|MSYS*|MINGW*)
+     echo 'MS Windows'
+     ;;
+
+   # Add here more strings to compare
+   # See correspondence table at the bottom of this answer
+
+   *)
+     echo 'Other OS' 
+     ;;
+    esac
+else
+    echo "Doom already installed"
+fi
+
+
+# Make nvim directories
+mkdir -p ~/.doom.d/snippets
+cp -rf ./snippets/ ~/.doom.d/snippets
+# mkdir -p ~/.config/nvim/after/plugin
+# mkdir -p ~/.config/nvim/lua
+
+# link wholesale
+for f in `find . -regex ".*\.el$"`; do
+    rm -rf ~/.doom.d/$f
+    ln -s ~/dotfiles/mike_emacs/$f ~/.doom.d/$f
+done
+for f in `find . -regex ".*\.org$"`; do
+    rm -rf ~/.doom.d/$f
+    ln -s ~/dotfiles/mike_emacs/$f ~/.doom.d/$f
+done
+
+doom sync

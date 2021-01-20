@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# type: command
+# name: sub_one
+# uuid: mike_sub1
+# key: sone
+# condition: (texmathp)
+# --
+(backward-delete-char 1)
+(yas/expand-snippet "_1 $0")

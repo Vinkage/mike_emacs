@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: set
+# uuid: mike_set
+# key: set
+# condition: (texmathp)
+# --
+\left\\{$0\right\\} <++>

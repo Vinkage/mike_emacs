@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: absolute
+# uuid: mike_absolute
+# key: abs
+# condition: (texmathp)
+# --
+\left\|$0\right\| <++>

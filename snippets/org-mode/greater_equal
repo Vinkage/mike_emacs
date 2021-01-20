@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: greater_equal
+# uuid: mike_greater_equal
+# key: geq
+# condition: (texmathp)
+# --
+\geq $0

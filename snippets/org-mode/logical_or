@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: logical_or
+# uuid: mike_logical_or
+# key: tap
+# condition: (texmathp)
+# --
+\lor $0

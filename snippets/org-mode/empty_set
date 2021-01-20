@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: empty
+# uuid: mike_empty
+# key: empty
+# condition: (texmathp)
+# --
+\varnothing $0

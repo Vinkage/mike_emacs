@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: latex_neq
+# uuid: mike_latex_neq
+# key: neq
+# condition: (texmathp)
+# --
+\neq $0
