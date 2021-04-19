@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: greek_beta
+# uuid: mike_greek_beta
+# key: ;b
+# condition: (texmathp)
+# --
+\beta $0

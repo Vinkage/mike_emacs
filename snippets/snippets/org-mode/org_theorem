@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: theorem_mike
+# uuid: theorem_mike
+# key: ;thrm
+# condition: (not (texmathp))
+# --
+#+ATTR_LATEX: :options [$0]
+#+begin_theorem
+<++>
+#+end_theorem

@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: latex
+# key: latex
+# condition: (not (org-inside-LaTeX-fragment-p))
+# --
+#+BEGIN_SRC latex
+`%`$0
+#+END_SRC

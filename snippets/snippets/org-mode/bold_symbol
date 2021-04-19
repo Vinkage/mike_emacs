@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: bold_symbol
+# uuid: mike_bold_symbol
+# key: :b
+# condition: (texmathp)
+# --
+\boldsymbol{$0} <++>

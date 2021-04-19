@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: r_ggplot_plus_geom
+# uuid: mike_r_ggplot_geom_facetrows
+# key: ggpmf
+# condition: t
+# --
+ggplot(data = $0) +
+    <++>(mapping = aes(<++>)) +
+    facet_wrap(~ <++>, nrow=<++>)

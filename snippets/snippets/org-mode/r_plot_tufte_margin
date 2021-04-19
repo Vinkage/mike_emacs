@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: r_plot_tufte_margin
+# uuid: mike_r_plot_tufte_margin
+# key: :rptm
+# condition: (not (texmathp))
+# --
+#+NAME: ${1:name}
+#+begin_src R :file $1.png :session mikeR :results graphics file :ravel cache=T, echo=F, fig.margin=T, fig.cap=""
+$0
+#+end_src

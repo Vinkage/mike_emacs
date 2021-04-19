@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# type: command
+# name: kwadraat
+# uuid: mike_kwadraat
+# key: sr
+# condition: (texmathp)
+# --
+(backward-delete-char 1)
+(yas/expand-snippet "^2 $0")

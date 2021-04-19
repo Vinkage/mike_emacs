@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: def
+# uuid: def_function
+# key: def
+# condition: t
+# --
+def ${0:function}(<++>):
+    <++>

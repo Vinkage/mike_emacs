@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: math_prod
+# uuid: mike_math_prod
+# key: prod
+# condition: (texmathp)
+# --
+\prod_{$0 }^{<++> } <++>

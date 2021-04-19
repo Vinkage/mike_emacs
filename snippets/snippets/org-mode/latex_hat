@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# type: command
+# name: latex_hat
+# uuid: mike_latex_hat
+# key: hat
+# condition: (texmathp)
+# --
+(backward-delete-char 1)
+(laas-wrap-previous-object "hat")

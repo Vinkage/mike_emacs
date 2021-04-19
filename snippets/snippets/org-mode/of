@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# type: command
+# name: of
+# uuid: of_pull
+# key: of
+# condition: (texmathp)
+# --
+(backward-delete-char 1)
+(yas/expand-snippet "($0) <++>")

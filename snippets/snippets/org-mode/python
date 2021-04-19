@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: python_org
+# uuid: python_org
+# key: ;p
+# condition: t
+# --
+#+begin_src python
+$0
+#+end_src

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: new
+# key: new
+# condition: (and (org-inside-LaTeX-fragment-p) 'auto)
+# --
+hello i'm conditionally expanded $0

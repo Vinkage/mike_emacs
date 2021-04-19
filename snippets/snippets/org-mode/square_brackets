@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: square_brackets
+# uuid: mike_square_brackets
+# key: ys[
+# condition: (texmathp)
+# --
+\left[ $0\right] <++>

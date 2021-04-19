@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: math_times
+# uuid: mike_math_times
+# key: times
+# condition: (texmathp)
+# --
+\times $0

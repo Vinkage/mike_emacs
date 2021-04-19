@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: greek_epsilon
+# uuid: mike_greek_epsilon
+# key: ;e
+# condition: (texmathp)
+# --
+\epsilon $0

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: nind
+# uuid: mike-nind
+# key: nind
+# condition: (texmathp)
+# --
+\not\perp \!\!\! \perp $0

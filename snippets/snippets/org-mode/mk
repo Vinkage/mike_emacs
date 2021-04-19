@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: mk
+# uuid: mk
+# key: mk
+# condition: (not (texmathp))
+# --
+\\( $0\\) <++>

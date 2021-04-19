@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: indep
+# uuid: mike-indep
+# key: ind
+# condition: (texmathp)
+# --
+\perp \!\!\! \perp $0

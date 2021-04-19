@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: r_assign
+# uuid: mike_r_assign
+# key: ass
+# condition: t
+# --
+<- $0

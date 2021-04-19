@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: dplyr_pipe
+# uuid: mike_dplyr_pipe
+# key: pipe
+# condition: t
+# --
+%>% $0

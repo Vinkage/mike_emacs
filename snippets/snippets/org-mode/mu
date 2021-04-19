@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: mu
+# uuid: mike_mu
+# key: ;m
+# condition: (texmathp)
+# --
+\mu $0

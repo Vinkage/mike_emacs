@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: ascz
+# uuid: mike-ascz
+# key: ascz
+# condition: t
+# --
+* $0
+:PROPERTIES:
+:ANKI_DECK: inbox
+:ANKI_NOTE_TYPE: cloze_emacs
+:END:
+
+** text
+
+<++>
+
+** extra
+
+<++>

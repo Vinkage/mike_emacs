@@ -1,0 +1,27 @@
+# -*- mode: snippet -*-
+# name: asdf
+# uuid: mike-asdf
+# key: asdf
+# condition: t
+# --
+** $0
+:PROPERTIES:
+:ANKI_DECK: inbox
+:ANKI_NOTE_TYPE: math_def_type_example
+:END:
+
+*** name
+
+<++>
+
+*** defintion
+
+<++>
+
+*** example
+
+<++>
+
+*** picture
+
+<++>

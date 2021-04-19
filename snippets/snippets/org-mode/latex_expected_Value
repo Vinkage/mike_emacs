@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: latex_expectedValue
+# uuid: mike_latex_expectedValue
+# key: vex
+# condition: (texmathp)
+# --
+\mathbb{E}_{$0} \left[ <++> \right] <++>

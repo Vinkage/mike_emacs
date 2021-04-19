@@ -1,0 +1,9 @@
+# -*- mode: snippet -*-
+# name: rplt
+# uuid: mike-rplt
+# key: rplt
+# condition: t
+# --
+#+begin_src R :file plots/$0.png :session mikeR :results file graphics :exports both
+<++>
+#+end_src

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: cup
+# uuid: mike_cup
+# key: cup
+# condition: (texmathp)
+# --
+\cup $0

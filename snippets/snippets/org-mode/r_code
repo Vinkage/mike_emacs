@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: r_code
+# uuid: mike_r_code
+# key: :r
+# condition: (not (texmathp))
+# --
+#+NAME: $0
+#+begin_src R :session mikeR :results output :ravel cache=T, echo=F
+<++>
+#+end_src

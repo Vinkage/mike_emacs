@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: align_newline
+# uuid: mike_align_newline
+# key: ;nl
+# condition: (texmathp)
+# --
+$0 &= <++> \tag*{\\{<++>\\} }\\\\
+<++>

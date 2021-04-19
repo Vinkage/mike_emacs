@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: test
+# key: math
+# condition: (and (texmathp) 'auto)
+# --
+it$1worked!$0

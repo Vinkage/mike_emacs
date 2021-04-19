@@ -32,3 +32,5 @@
 ;; better python eval
 (package! eval-in-repl
   :recipe (:host github :repo "kaz-yos/eval-in-repl"))
+(package! calfw
+  :recipe (:host github :repo "kiwanami/emacs-calfw"))

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: sum
+# uuid: sum
+# key: sum
+# condition: (texmathp)
+# --
+\sum_{$0}^{<++>} <++>

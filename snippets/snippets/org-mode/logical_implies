@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: logical_implies
+# uuid: mike_logical_implies
+# key: implies
+# condition: (texmathp)
+# --
+\implies $0

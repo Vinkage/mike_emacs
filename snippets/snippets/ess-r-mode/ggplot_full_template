@@ -1,0 +1,14 @@
+# -*- mode: snippet -*-
+# name: ggplot_full_template
+# uuid: mike_ggplot_full_template
+# key: ggpft
+# condition: t
+# --
+ggplot(data = $0) +
+  <++>(
+     mapping = aes(<++>),
+     stat = <++>,
+     position = <++>
+) +
+<++> +
+<++>
